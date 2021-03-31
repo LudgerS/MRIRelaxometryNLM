@@ -1,15 +1,13 @@
 function filtered =  stackNlmFilter(stack, sigma, params)
 % following Manjon 2010 (or buades 2005) regarding variable names
 % missing preselection and automatic sigma estimation
-
-% %% just for testing
-% 
-% load('sheppLoganPhantom')
-% 
-% sigma = 0.02;
-% % noisy image
-% data = abs(reference + sigma*(randn(size(reference)) + 1i*randn(size(reference))));
-% % data = reference + sigma*randn(size(reference));
+%
+% Assumes that the third dimension of stack is the relaxometry dimension
+%
+% Written by Ludger Starke; Max Delbrück Center for Molecular Medicine in
+% the Helmholtz Association, Berlin; 21-01-25
+%
+% License: GNU GPLv3 
 
 if numel(size(stack)) ~= 3
     error('wrong dimension of input data')
@@ -20,8 +18,8 @@ nTEs = size(stack, 3);
 %% parameters
 
 n = params.centerDistance;      % block center distance
-m = params.blockRadius;      % (2m + 1)^2 is the block area, needs to be m > n/2
-s = params.searchRadius;    % (2s + 1)^2 is the number of searched blocks
+m = params.blockRadius;         % (2m + 1)^2 is the block area, needs to be m > n/2
+s = params.searchRadius;        % (2s + 1)^2 is the number of searched blocks
 
 beta = params.beta;
 
@@ -40,14 +38,10 @@ paddedData = padarray(paddedData, [toFitBlocks + toSymmetricGrid, 0], 'replicate
 indexOrigX = (1 + toFitBlocks):(toFitBlocks + originalDim(1));
 indexOrigY = (1 + toFitBlocks):(toFitBlocks + originalDim(2));
 
-% testData = paddedData(indexOrigX, indexOrigY);
-% disp(maxN(paddedData - testData));
 
 %% compute block centers
 
 dim = size(paddedData);
-
-% [blockCentersX, blockCentersY] = meshgrid(ceil(n/2):n:dim(1), ceil(n/2):n:dim(2));
 
 blockCentersX = max(m + 1, n):n:(dim(1) - m);
 blockCentersY = max(m + 1, n):n:(dim(2) - m);
@@ -60,6 +54,7 @@ u = zeros(size(paddedData));
 
 counter = 1;
 
+% loop through to be filtered blocks along x
 for ii = 1:numel(blockCentersX)
     
     if (ii/numel(blockCentersX) > counter/10)
@@ -67,6 +62,7 @@ for ii = 1:numel(blockCentersX)
         counter = counter + 1;
     end
     
+    % loop through to be filtered blocks along y
     for jj = 1:numel(blockCentersY)
         
         blockCenter = [blockCentersX(ii), blockCentersY(jj)];
@@ -80,23 +76,18 @@ for ii = 1:numel(blockCentersX)
         sumWeights = 0;
 
 %         weightMatrix = zeros(dim);
-
 %         blockCenter = [blockCentersX(10), blockCentersY(10)];
-%         blockMask = getBlockMask(blockCenter, dim, m);
 
-%         tic
+        % compare to be filtered block (B) to neighbors and compute weights
         for kk = max(1, ii - s):min(numel(blockCentersX), ii + s)
             for ll = max(1, jj - s):min(numel(blockCentersY), jj + s)
                 
-        
                 blockCenter = [blockCentersX(kk), blockCentersY(ll)];
-%                 compB = paddedData(getBlockMask(blockCenter, dim, m));
                 [rangeX, rangeY] = getBlockMaskRange(blockCenter, dim, m);
                 compB = paddedData(rangeX, rangeY, :);
                 weight = computeWeight(B, compB(:), hSq);
                 
 %                 fprintf('inner Loop X: %d - Y: %d - Weight: %f\n', blockCenter(1), blockCenter(2), weight)
-
 %                 weightMatrix(blockCenter(1), blockCenter(2)) = weight;
                 
                 temp = temp + weight*compB(:);
@@ -104,11 +95,9 @@ for ii = 1:numel(blockCentersX)
             
             end
         end
-%         toc
         
 %         imshow(imresize(weightMatrix, 4, 'method', 'nearest'), [])
 %         drawnow
-                
         
         temp = temp/sumWeights;
         
@@ -140,15 +129,12 @@ rangeY = max(1, blockCenter(2) - m):min(dim(2), blockCenter(2) + m);
 
 blockMask(rangeX, rangeY, :) = true;
 
-% compute block masks try
-function [rangeX, rangeY] = getBlockMaskRange(blockCenter, dim, m)
 
-% blockMask = false(dim);
+% compute block masks as range (faster than logical indexing)
+function [rangeX, rangeY] = getBlockMaskRange(blockCenter, dim, m)
 
 rangeX = max(1, blockCenter(1) - m):min(dim(1), blockCenter(1) + m);
 rangeY = max(1, blockCenter(2) - m):min(dim(2), blockCenter(2) + m);
-
-% blockMask(rangeX, rangeY, :) = true;
 
 
 % compute weights
@@ -156,7 +142,6 @@ function weight = computeWeight(B, compB, hSq)
 % not normalized
 
 weight = exp(-(B - compB)'*(B - compB)/hSq);
-% weight = (B - compB)'*(B - compB)/hSq;
 
 
 
