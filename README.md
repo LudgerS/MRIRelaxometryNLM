@@ -1,9 +1,9 @@
 # MRIRelaxometryNLM
 This repository contains the Matlab / Octave code of a nonlocal means filter for MRI relaxometry.
 Its use is described in 
-    L. Starke, K. Tabelow, T. Niendorf & A. Pohlmann
-    "Denoising for Improved Parametric MRI of the Kidney: Protocol for Nonlocal Means Filtering"
-    Published in Springer Protocols book "Preclinical MRI of the Kidney" (2021)
+    L. Starke, K. Tabelow, T. Niendorf & A. Pohlmann,
+    "Denoising for Improved Parametric MRI of the Kidney: Protocol for Nonlocal Means Filtering",
+    Springer Protocols book "Preclinical MRI of the Kidney", (2021)
 
 Contains:
 
